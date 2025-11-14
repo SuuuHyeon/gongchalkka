@@ -1,11 +1,13 @@
 package com.project.gongchalkka.field.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@NoArgsConstructor
+// JPA를 위해 추가, 임의 변형 불가하게 protected
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "fields")
 public class Field {
