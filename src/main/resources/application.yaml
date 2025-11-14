@@ -1,3 +1,28 @@
 spring:
   application:
     name: gongchalkka
+
+
+# database
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/gongchalkka?serverTimeZone=UTC&characterEncoding=UTF-8
+    username: root
+    password: 12341234
+
+
+# JPA
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+
+# JWT 관련 설정
+jwt:
+  secret: ${JWT_SECRET_KEY}
+  access-token-expiration-ms: 3600000
+  refresh-token-expiration-ms: 604800000
+
