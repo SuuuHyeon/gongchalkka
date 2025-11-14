@@ -6,7 +6,6 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -27,14 +26,15 @@ public class JwtTokenProvider {
 
     /// yml에서 설정 값 주입
     public JwtTokenProvider(
-            @Value("${jwt.secret}") String secretKey,
-            @Value("${jwt.access-token-expiration-ms}") long accessTokenValidityInMs,
-            @Value("${jwt.refresh-token-expiration-ms}") long refreshTokenValidityInMs
+            JwtProperties jwtProperties
     ) {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);    // Base64로 인코딩된 비밀 키를 디코딩 후 'Key' 객체로 변환
+        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecret());    // Base64로 인코딩된 비밀 키를 디코딩 후 'Key' 객체로 변환
         this.key = Keys.hmacShaKeyFor(keyBytes);                // HMAC-SHA 알고리즘으로 Key 생성
-        this.accessTokenValidityInMs = accessTokenValidityInMs;
-        this.refreshTokenValidityInMs = refreshTokenValidityInMs;
+        // 3. yml의 값들을 객체에서 꺼내 씀
+        this.accessTokenValidityInMs = jwtProperties.getAccessTokenExpirationMs();
+        this.refreshTokenValidityInMs = jwtProperties.getRefreshTokenExpirationMs();
+
+        log.info("Loaded JWT Secret Key (HMAC-SHA Key): {}", this.key.toString());
     }
 
 //    /// 토근 생성
