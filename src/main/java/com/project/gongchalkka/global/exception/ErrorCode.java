@@ -34,6 +34,10 @@ public enum ErrorCode {
     MATCH_ALREADY_APPLIED(HttpStatus.CONFLICT, "M-002", "이미 신청한 매치입니다."),
     MATCH_NOT_RECRUITING(HttpStatus.BAD_REQUEST, "M-003", "모집중인 매치가 아닙니다."),
     MATCH_CAPACITY_FULL(HttpStatus.BAD_REQUEST, "M-004", "정원이 마감된 매치입니다."),
+    MATCH_PARTICIPANT_EMPTY(HttpStatus.CONFLICT, "M-005", "참가자가 0명이므로 취소할 수 없습니다."),
+
+    SUBSCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "M-006", "신청하신 매치가 아닙니다."),
+    SUBSCRIPTION_ALREADY_CANCELED(HttpStatus.BAD_REQUEST, "M-007", "이미 취소하였습니다."),
 
     // ===== 4. Field (F) =====
     FIELD_NOT_FOUND(HttpStatus.NOT_FOUND, "F-001", "존재하지 않는 풋살장입니다."),

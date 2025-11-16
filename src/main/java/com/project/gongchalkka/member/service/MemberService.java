@@ -1,5 +1,8 @@
 package com.project.gongchalkka.member.service;
 
+import com.project.gongchalkka.global.exception.BusinessErrorException;
+import com.project.gongchalkka.global.exception.EntityNotFoundErrorException;
+import com.project.gongchalkka.global.exception.ErrorCode;
 import com.project.gongchalkka.global.jwt.JwtTokenProvider;
 import com.project.gongchalkka.member.dto.MemberLoginRequest;
 import com.project.gongchalkka.member.dto.MemberSignupRequest;
@@ -9,19 +12,17 @@ import com.project.gongchalkka.member.entity.Member;
 import com.project.gongchalkka.member.entity.RefreshToken;
 import com.project.gongchalkka.member.repository.MemberRepository;
 import com.project.gongchalkka.member.repository.RefreshTokenRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.Principal;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@RequestMapping("/members")
 public class MemberService {
 
     private final MemberRepository memberRepository;        // MemberRepository 주입
@@ -34,7 +35,8 @@ public class MemberService {
     @Transactional
     public Long signup(MemberSignupRequest request) {
         if (memberRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
+            //  Email 중복
+            throw new BusinessErrorException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         // 엔티티 noargsconstructor 어노테이션 추가로 인한 수정사항
@@ -54,11 +56,12 @@ public class MemberService {
     /// 로그인
     public TokenResponse login(MemberLoginRequest request) {
         Member member = memberRepository.findByEmail(request.getEmail()).orElseThrow(
-                () -> new IllegalArgumentException("가입되지 않은 이메일입니다.")
+                // 유저를 찾을 수 없음
+                () -> new EntityNotFoundErrorException(ErrorCode.USER_NOT_FOUND)
         );
 
         if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
-            throw new IllegalArgumentException("잘못된 비밀번호입니다.");
+            throw new BusinessErrorException(ErrorCode.INVALID_PASSWORD);
         }
 
         String accessToken = jwtTokenProvider.createAccessToken(member.getEmail(), member.getId());
@@ -86,11 +89,11 @@ public class MemberService {
 
         String refreshTokenValue = request.getRefreshToken();
         if (!jwtTokenProvider.validateToken(refreshTokenValue)) {
-            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+            throw new BusinessErrorException(ErrorCode.TOKEN_INVALID);
         }
 
         RefreshToken refreshToken = refreshTokenRepository.findByTokenValue(request.getRefreshToken()).orElseThrow(
-                () -> new IllegalArgumentException("Refresh Token이 존재하지 않습니다.")
+                () -> new EntityNotFoundErrorException(ErrorCode.REFRESH_TOKEN_NOT_FOUND)
         );
 
         // 유저 정보
@@ -118,11 +121,11 @@ public class MemberService {
         String email = principal.getName(); // 사용자
 
         Member member = memberRepository.findByEmail(email).orElseThrow(
-                () -> new IllegalArgumentException("사용자를 찾을 수 없습니다.")
+                () -> new EntityNotFoundErrorException(ErrorCode.USER_NOT_FOUND)
         );
 
         RefreshToken refreshToken = refreshTokenRepository.findByMemberId(member.getId()).orElseThrow(
-                () -> new IllegalArgumentException("이미 로그아웃된 사용자입니다.")
+                () -> new EntityNotFoundErrorException(ErrorCode.REFRESH_TOKEN_NOT_FOUND)
         );
 
         refreshTokenRepository.delete(refreshToken);

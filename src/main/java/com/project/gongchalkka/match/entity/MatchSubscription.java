@@ -2,14 +2,16 @@ package com.project.gongchalkka.match.entity;
 
 import com.project.gongchalkka.member.entity.Member;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "match_subscriptions")
 public class MatchSubscription {
 
@@ -28,17 +30,25 @@ public class MatchSubscription {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private SubscriptionStatus status = SubscriptionStatus.APPLIED;     // 기본값 '신청됨'
+    private SubscriptionStatus status;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
     // 생성자
-    public MatchSubscription(Member member, Match match, SubscriptionStatus status, LocalDateTime createdAt) {
+    public MatchSubscription(Member member, Match match) {
         this.member = member;
         this.match = match;
-        this.status = status;
-        this.createdAt = createdAt;
+    }
+
+    /**
+     * JPA 생명주기 훅(Hook)
+     * 이 엔티티가 '최초 저장(INSERT)' 되기 '직전'에 자동 호출
+     */
+    @PrePersist
+    public void onPrePersist() {
+        this.status = SubscriptionStatus.APPLIED;
+        this.createdAt = LocalDateTime.now();
     }
 
     // 참가 취소 메서드

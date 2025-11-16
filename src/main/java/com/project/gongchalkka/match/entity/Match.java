@@ -1,6 +1,8 @@
 package com.project.gongchalkka.match.entity;
 
 import com.project.gongchalkka.field.entity.Field;
+import com.project.gongchalkka.global.exception.BusinessErrorException;
+import com.project.gongchalkka.global.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -36,7 +38,7 @@ public class Match {
     private int maxCapacity;
 
     @Column(nullable = false)
-    private int currentCapacity = 0;    // 기본값 0명으로 세팅
+    private Integer currentCapacity = 0;    // 기본값 0명으로 세팅
 
     @OneToMany(mappedBy = "match", cascade = CascadeType.ALL)
     private List<MatchSubscription> subscriptions = new ArrayList<>();
@@ -55,25 +57,29 @@ public class Match {
     }
 
     // 매치 신청
-    public boolean addParticipant() {
-        // 인원 및 매칭상태 검사
-        if (!(this.currentCapacity < this.maxCapacity) || !(this.status == MatchStatus.RECRUITING)) {
-            throw new IllegalStateException("참가 신청이 불가능한 상태입니다.");
+    public void addParticipant() {
+        // 인원 검사
+        if (!(this.currentCapacity < this.maxCapacity)) {
+            throw new BusinessErrorException(ErrorCode.MATCH_CAPACITY_FULL);
         }
+
+        // 매칭 상태 검사 (모집중)
+        if (!(this.status == MatchStatus.RECRUITING)) {
+            throw new BusinessErrorException(ErrorCode.MATCH_NOT_RECRUITING);
+        }
+
+        // 인원 참가
         this.currentCapacity++;
 
-        // 인원 꽉 차면 매치 성사
-        if (this.currentCapacity == this.maxCapacity) {
-            this.status = MatchStatus.COMPLETED;
-            return true;
+        if (this.currentCapacity.equals(this.maxCapacity)) {
+            this.status = MatchStatus.CONFIRMED;    // 정원마감
         }
-        return false;
     }
 
     // 매치 신청 취소
     public void removeParticipant() {
         if (this.currentCapacity <= 0) {
-            throw new IllegalStateException("참가자가 0명입니다.");
+            throw new BusinessErrorException(ErrorCode.MATCH_PARTICIPANT_EMPTY);
         }
 
         this.currentCapacity--;
