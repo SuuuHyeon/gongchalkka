@@ -1,8 +1,13 @@
 package com.project.gongchalkka.match.controller;
 
 
+import com.project.gongchalkka.match.dto.MatchResponse;
 import com.project.gongchalkka.match.service.MatchService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +22,18 @@ public class MatchController {
     private final MatchService matchService;
 
     // (참고: GET / (매치 목록), GET /{id} (매치 상세) 등 조회 API는 나중에 추가)
+
+    /// 매치 조회 (페이징)
+    @GetMapping
+    public ResponseEntity<Page<MatchResponse>> getAllMatches(
+            // 페이징 기본값 설정
+            @PageableDefault(size = 20, sort = "startTime", direction = Sort.Direction.DESC)
+            Pageable pageable) {
+        Page<MatchResponse> matches = matchService.getAllMatches(pageable);
+
+        return ResponseEntity.ok(matches);
+    }
+
 
     /**
      * 매치 신청
@@ -33,6 +50,9 @@ public class MatchController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    /**
+     * 매치 취소
+     */
     @DeleteMapping("/{matchId}")
     public ResponseEntity<Void> cancelMatch(@PathVariable Long matchId, Principal principal) {
         matchService.cancelMatch(matchId, principal);
