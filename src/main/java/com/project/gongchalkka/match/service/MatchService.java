@@ -1,9 +1,12 @@
 package com.project.gongchalkka.match.service;
 
 
+import com.project.gongchalkka.field.entity.Field;
+import com.project.gongchalkka.field.repository.FieldRepository;
 import com.project.gongchalkka.global.exception.BusinessErrorException;
 import com.project.gongchalkka.global.exception.EntityNotFoundErrorException;
 import com.project.gongchalkka.global.exception.ErrorCode;
+import com.project.gongchalkka.match.dto.MatchCreateRequest;
 import com.project.gongchalkka.match.dto.MatchResponse;
 import com.project.gongchalkka.match.entity.Match;
 import com.project.gongchalkka.match.entity.MatchSubscription;
@@ -28,6 +31,7 @@ public class MatchService {
 
     private final MemberRepository memberRepository;
     private final MatchRepository matchRepository;
+    private final FieldRepository fieldRepository;
     private final MatchSubscriptionRepository matchSubscriptionRepository;
 
 
@@ -47,13 +51,10 @@ public class MatchService {
     }
 
 
-    ///  참가신청 메서드
+    ///  매치 참가 신청 메서드
     @Transactional
     public void applyToMatch(Long matchId, Principal principal) {
-        // 유저 정보 검증
-        Member member = memberRepository.findByEmail(principal.getName()).orElseThrow(
-                () -> new EntityNotFoundErrorException(ErrorCode.USER_NOT_FOUND)
-        );
+        Member member = validateMember(principal, memberRepository);
 
         // 매치 정보 검증
         Match match = matchRepository.findByIdWithField(matchId).orElseThrow(
@@ -82,13 +83,11 @@ public class MatchService {
     }
 
 
-    ///  참가 취소 메서드
+    ///  매치 참가 취소 메서드
     @Transactional
     public void cancelMatch(Long matchId, Principal principal) {
         // 유저 정보 검증
-        Member member = memberRepository.findByEmail(principal.getName()).orElseThrow(
-                () -> new EntityNotFoundErrorException(ErrorCode.USER_NOT_FOUND)
-        );
+        Member member = validateMember(principal, memberRepository);
 
         // 매치 정보 검증
         Match match = matchRepository.findByIdWithField(matchId).orElseThrow(
@@ -115,5 +114,47 @@ public class MatchService {
                 member.getNickname(),
                 match.getId(),
                 match.getField().getFieldName());
+    }
+
+
+    ///  매치 생성 메서드
+    public MatchResponse createMatch(MatchCreateRequest request, Principal principal) {
+
+        ///  TODO: 매치 생성 관리자 제한(보류)
+        // 유저 정보 검증
+        Member member = validateMember(principal, memberRepository);
+
+        // 필드 검증
+        Long fieldId = request.getFieldId();
+        Field field = fieldRepository.findById(fieldId).orElseThrow(
+                () -> new EntityNotFoundErrorException(ErrorCode.FIELD_NOT_FOUND)
+        );
+
+        // 시간 중복 검사 (해당 구장의 시간이 비어있는지)
+        if (matchRepository.existsOverlappingMatch(field, request.getStartTime(), request.getEndTime())) {
+            throw new BusinessErrorException(ErrorCode.MATCH_TIME_CONFLICT);
+        }
+
+        // 매치 엔티티 생성
+        Match newMatch = new Match(
+                field,
+                request.getStartTime(),
+                request.getEndTime(),
+                request.getMaxCapacity()
+        );
+
+        Match savedMatch = matchRepository.save(newMatch);
+
+        log.info("newMatch: {}, savedMatch: {}", newMatch, savedMatch);
+        return MatchResponse.fromEntity(savedMatch);
+    }
+
+
+    /// 멤버 검증 메서드 추출
+    public static Member validateMember(Principal principal, MemberRepository memberRepository) {
+        // 유저 정보 검증
+        return memberRepository.findByEmail(principal.getName()).orElseThrow(
+                () -> new EntityNotFoundErrorException(ErrorCode.USER_NOT_FOUND)
+        );
     }
 }

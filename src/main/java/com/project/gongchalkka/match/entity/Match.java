@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Entity
 @Getter
+@ToString(exclude = {"field", "subscriptions"}) // 연관관계 필드는 제외
 // JPA를 위해 추가, 임의 변형 불가하게 protected
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "matchs")

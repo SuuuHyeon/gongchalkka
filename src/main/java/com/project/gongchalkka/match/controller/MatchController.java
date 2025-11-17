@@ -1,6 +1,7 @@
 package com.project.gongchalkka.match.controller;
 
 
+import com.project.gongchalkka.match.dto.MatchCreateRequest;
 import com.project.gongchalkka.match.dto.MatchResponse;
 import com.project.gongchalkka.match.service.MatchService;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +59,17 @@ public class MatchController {
         matchService.cancelMatch(matchId, principal);
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    /**
+     * 매치 생성
+     */
+    @PostMapping
+    /// TODO: 유효성 체크 추가
+    public ResponseEntity<MatchResponse> createMatch(@RequestBody MatchCreateRequest request, Principal principal) {
+        MatchResponse match = matchService.createMatch(request, principal);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(match);
     }
 
     // (추후 '참가 취소' API: DELETE /matches/{matchId}/cancel 구현 예정)

@@ -38,7 +38,8 @@ public enum ErrorCode {
 
     SUBSCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "M-006", "신청하신 매치가 아닙니다."),
     SUBSCRIPTION_ALREADY_CANCELED(HttpStatus.BAD_REQUEST, "M-007", "이미 취소하였습니다."),
-
+    MATCH_TIME_CONFLICT(HttpStatus.CONFLICT, "M-008", "해당 구장에 이미 겹치는 시간대의 매치가 존재합니다."),
+    MATCH_TIME_INVALID(HttpStatus.BAD_REQUEST, "M-009", "종료 시간은 시작 시간 이후여야 합니다."),
     // ===== 4. Field (F) =====
     FIELD_NOT_FOUND(HttpStatus.NOT_FOUND, "F-001", "존재하지 않는 풋살장입니다."),
 
