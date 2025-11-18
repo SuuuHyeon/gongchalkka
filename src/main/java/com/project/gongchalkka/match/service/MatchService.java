@@ -15,6 +15,7 @@ import com.project.gongchalkka.match.repository.MatchRepository;
 import com.project.gongchalkka.match.repository.MatchSubscriptionRepository;
 import com.project.gongchalkka.member.entity.Member;
 import com.project.gongchalkka.member.repository.MemberRepository;
+import com.project.gongchalkka.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -28,6 +29,8 @@ import java.security.Principal;
 @Service
 @RequiredArgsConstructor
 public class MatchService {
+
+    private final MemberService memberService;
 
     private final MemberRepository memberRepository;
     private final MatchRepository matchRepository;
@@ -50,11 +53,20 @@ public class MatchService {
         return matchPage.map(MatchResponse::fromEntity);
     }
 
+    ///  매치 조회 (단건) 메서드
+    public MatchResponse getMatch(Long matchId) {
+        Match match = matchRepository.findByIdWithField(matchId).orElseThrow(
+                () -> new EntityNotFoundErrorException(ErrorCode.MATCH_NOT_FOUND)
+        );
+
+        return MatchResponse.fromEntity(match);
+
+    }
 
     ///  매치 참가 신청 메서드
     @Transactional
     public void applyToMatch(Long matchId, Principal principal) {
-        Member member = validateMember(principal, memberRepository);
+        Member member = memberService.validateMember(principal);
 
         // 매치 정보 검증
         Match match = matchRepository.findByIdWithField(matchId).orElseThrow(
@@ -87,7 +99,7 @@ public class MatchService {
     @Transactional
     public void cancelMatch(Long matchId, Principal principal) {
         // 유저 정보 검증
-        Member member = validateMember(principal, memberRepository);
+        Member member = memberService.validateMember(principal);
 
         // 매치 정보 검증
         Match match = matchRepository.findByIdWithField(matchId).orElseThrow(
@@ -118,11 +130,12 @@ public class MatchService {
 
 
     ///  매치 생성 메서드
+    @Transactional
     public MatchResponse createMatch(MatchCreateRequest request, Principal principal) {
 
         ///  TODO: 매치 생성 관리자 제한(보류)
         // 유저 정보 검증
-        Member member = validateMember(principal, memberRepository);
+        Member member = memberService.validateMember(principal);
 
         // 필드 검증
         Long fieldId = request.getFieldId();
@@ -148,13 +161,5 @@ public class MatchService {
         log.info("newMatch: {}, savedMatch: {}", newMatch, savedMatch);
         return MatchResponse.fromEntity(savedMatch);
     }
-
-
-    /// 멤버 검증 메서드 추출
-    public static Member validateMember(Principal principal, MemberRepository memberRepository) {
-        // 유저 정보 검증
-        return memberRepository.findByEmail(principal.getName()).orElseThrow(
-                () -> new EntityNotFoundErrorException(ErrorCode.USER_NOT_FOUND)
-        );
-    }
 }
+

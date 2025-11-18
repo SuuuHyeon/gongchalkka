@@ -24,7 +24,9 @@ public class MatchController {
 
     // (참고: GET / (매치 목록), GET /{id} (매치 상세) 등 조회 API는 나중에 추가)
 
-    /// 매치 조회 (페이징)
+    /**
+     * 매치 조회 (페이징)
+     */
     @GetMapping
     public ResponseEntity<Page<MatchResponse>> getAllMatches(
             // 페이징 기본값 설정
@@ -35,6 +37,14 @@ public class MatchController {
         return ResponseEntity.ok(matches);
     }
 
+    /**
+     * 매치 조회 (단건)
+     */
+    @GetMapping("/{matchId}")
+    public ResponseEntity<MatchResponse> getMatch(@PathVariable Long matchId) {
+        MatchResponse matchResponse = matchService.getMatch(matchId);
+        return ResponseEntity.ok(matchResponse);
+    }
 
     /**
      * 매치 신청

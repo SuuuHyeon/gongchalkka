@@ -131,4 +131,14 @@ public class MemberService {
         refreshTokenRepository.delete(refreshToken);
     }
 
+    /**
+     * 멤버 검증 메서드
+     */
+    public Member validateMember(Principal principal) {
+        // 유저 정보 검증
+        return memberRepository.findByEmail(principal.getName()).orElseThrow(
+                () -> new EntityNotFoundErrorException(ErrorCode.USER_NOT_FOUND)
+        );
+    }
+
 }
