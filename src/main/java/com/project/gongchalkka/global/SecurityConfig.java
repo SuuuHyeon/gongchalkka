@@ -5,6 +5,8 @@ import com.project.gongchalkka.global.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -26,6 +28,14 @@ public class SecurityConfig {
     }
 
     private final JwtTokenProvider jwtTokenProvider;
+
+
+    ///  AuthenticationManager 빈 등록
+    ///  이미 등록된 CustomUserDetailsService(Bean)와 PasswordEncoder(Bean)를 찾아 자동으로 조립
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
 
 
     ///  임시로 모두 연결

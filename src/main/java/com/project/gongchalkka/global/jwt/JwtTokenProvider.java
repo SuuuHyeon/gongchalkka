@@ -10,11 +10,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.util.Collections;
-import java.util.Date;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -23,10 +25,12 @@ public class JwtTokenProvider {
     private final SecretKey key;
     private final long accessTokenValidityInMs;
     private final long refreshTokenValidityInMs;
+    private final String AUTHORITIES_KEY = "auth";
+    private final CustomUserDetailsService customUserDetailsService;
 
     /// yml에서 설정 값 주입
     public JwtTokenProvider(
-            JwtProperties jwtProperties
+            JwtProperties jwtProperties, CustomUserDetailsService customUserDetailsService
     ) {
         byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecret());    // Base64로 인코딩된 비밀 키를 디코딩 후 'Key' 객체로 변환
         this.key = Keys.hmacShaKeyFor(keyBytes);                // HMAC-SHA 알고리즘으로 Key 생성
@@ -34,33 +38,30 @@ public class JwtTokenProvider {
         this.accessTokenValidityInMs = jwtProperties.getAccessTokenExpirationMs();
         this.refreshTokenValidityInMs = jwtProperties.getRefreshTokenExpirationMs();
 
+        this.customUserDetailsService = customUserDetailsService;
+
         log.info("Loaded JWT Secret Key (HMAC-SHA Key): {}", this.key.toString());
     }
 
-//    /// 토근 생성
-//    public String createToken(String email, Long memberId) {
-//        long now = (new Date()).getTime();
-//        Date validity = new Date(now + this.accessTokenValidityInMs);
-//
-//        String createdToken = Jwts.builder()
-//                .subject(email)
-//                .claim("id", memberId)
-//                .issuedAt(new Date(now))
-//                .expiration(validity)
-//                .signWith(key)
-//                .compact();
-//        log.info("createdToken: {}", createdToken);
-//        return createdToken;
-//    }
-
     /// 엑세스 토큰 생성
-    public String createAccessToken(String email, Long memberId) {
+    public String createAccessToken(Authentication authentication) {
         long now = (new Date()).getTime();
         Date validity = new Date(now + accessTokenValidityInMs);
 
+
+        String authorities = authentication.getAuthorities()
+                .stream()
+                .map(authority -> authority.getAuthority())
+                .collect(Collectors.joining(","));
+
+        log.info("authorities: {}", authorities);
+
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+
         return Jwts.builder()
-                .subject(email)
-                .claim("id", memberId)
+                .subject(authentication.getName())                          // (Subject) = email
+                .claim("id", customUserDetails.getMember().getId())  // (Claim) = memberId
+                .claim(AUTHORITIES_KEY, Role.USER)                          // (Claim) = "ROLE_USER"
                 .issuedAt(new Date(now))
                 .expiration(validity)
                 .signWith(key)
@@ -89,15 +90,22 @@ public class JwtTokenProvider {
                 .getPayload();
 
         String email = claims.getSubject();     // 생성 때 넣었던 email
-        GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_USER");   // (임시)
 
-        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-                email, "", Collections.singletonList(authority)
-        );
+        List<SimpleGrantedAuthority> authorities = Arrays.stream((claims.get(AUTHORITIES_KEY)).toString().split(","))
+                .map(
+                        SimpleGrantedAuthority::new
+                )
+                .toList();
+
+        // userDetails 정보 생성
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+
+
+        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
+                new UsernamePasswordAuthenticationToken(userDetails, "", authorities);
 
         log.info("토큰 검증 / 추출: {}", usernamePasswordAuthenticationToken);
 
-        // email을 principal로 사용
         ///  TODO: 다시보기
         return usernamePasswordAuthenticationToken;
     }

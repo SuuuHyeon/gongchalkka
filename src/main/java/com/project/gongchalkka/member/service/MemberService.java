@@ -3,7 +3,9 @@ package com.project.gongchalkka.member.service;
 import com.project.gongchalkka.global.exception.BusinessErrorException;
 import com.project.gongchalkka.global.exception.EntityNotFoundErrorException;
 import com.project.gongchalkka.global.exception.ErrorCode;
+import com.project.gongchalkka.global.jwt.CustomUserDetails;
 import com.project.gongchalkka.global.jwt.JwtTokenProvider;
+import com.project.gongchalkka.global.jwt.Role;
 import com.project.gongchalkka.member.dto.MemberLoginRequest;
 import com.project.gongchalkka.member.dto.MemberSignupRequest;
 import com.project.gongchalkka.member.dto.TokenReissueRequest;
@@ -14,6 +16,9 @@ import com.project.gongchalkka.member.repository.MemberRepository;
 import com.project.gongchalkka.member.repository.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +30,8 @@ import java.security.Principal;
 @RequiredArgsConstructor
 public class MemberService {
 
+    private final AuthenticationManager authenticationManager;
+
     private final MemberRepository memberRepository;        // MemberRepository 주입
     private final PasswordEncoder passwordEncoder;          // PasswordEncoder 주입
     private final JwtTokenProvider jwtTokenProvider;
@@ -34,8 +41,8 @@ public class MemberService {
     /// 회원가입
     @Transactional
     public Long signup(MemberSignupRequest request) {
+        //  Email 중복
         if (memberRepository.existsByEmail(request.getEmail())) {
-            //  Email 중복
             throw new BusinessErrorException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
@@ -43,7 +50,8 @@ public class MemberService {
         Member member = new Member(
                 request.getEmail(),
                 passwordEncoder.encode(request.getPassword()),
-                request.getNickname()
+                request.getNickname(),
+                Role.USER
         );
 
         Member savedMember = memberRepository.save(member);
@@ -55,16 +63,31 @@ public class MemberService {
     @Transactional
     /// 로그인
     public TokenResponse login(MemberLoginRequest request) {
-        Member member = memberRepository.findByEmail(request.getEmail()).orElseThrow(
-                // 유저를 찾을 수 없음
-                () -> new EntityNotFoundErrorException(ErrorCode.USER_NOT_FOUND)
-        );
+//        Member member = memberRepository.findByEmail(request.getEmail()).orElseThrow(
+//                // 유저를 찾을 수 없음
+//                () -> new EntityNotFoundErrorException(ErrorCode.USER_NOT_FOUND)
+//        );
+//
+//        if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
+//            throw new BusinessErrorException(ErrorCode.INVALID_PASSWORD);
+//        }
 
-        if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
-            throw new BusinessErrorException(ErrorCode.INVALID_PASSWORD);
-        }
+        // 이메일과 비밀번호로 임시 증명서 발급
+        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());
+        log.info("usernamePasswordAuthenticationToken: {}", usernamePasswordAuthenticationToken);
 
-        String accessToken = jwtTokenProvider.createAccessToken(member.getEmail(), member.getId());
+        // authenticationManager에 임시 증명서 제출 -> 인증 후 authentication 발급
+        Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
+        log.info("authenticationManager 작업 후 usernamePasswordAuthenticationToken: {}", usernamePasswordAuthenticationToken);
+        log.info("authentication: {}", authentication);
+
+
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        log.info("userDetails: {}", userDetails);
+        Member member = userDetails.getMember();
+
+        String accessToken = jwtTokenProvider.createAccessToken(authentication);
         String refreshToken = jwtTokenProvider.createRefreshToken();
 
         refreshTokenRepository.findByMemberId(member.getId())
@@ -99,7 +122,15 @@ public class MemberService {
         // 유저 정보
         Member member = refreshToken.getMember();
 
-        String newAccessToken = jwtTokenProvider.createAccessToken(member.getEmail(), member.getId());
+        CustomUserDetails userDetails = new CustomUserDetails(member);
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails,
+                null,
+                userDetails.getAuthorities()
+        );
+
+        String newAccessToken = jwtTokenProvider.createAccessToken(authentication);
         // 실무에서는 보안을 위해 새 것으로 교체한다고 함
         // Refresh Token Rotation(RTR) 전략
         String newRefreshToken = jwtTokenProvider.createRefreshToken();
