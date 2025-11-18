@@ -6,6 +6,7 @@ import com.project.gongchalkka.field.repository.FieldRepository;
 import com.project.gongchalkka.global.exception.BusinessErrorException;
 import com.project.gongchalkka.global.exception.EntityNotFoundErrorException;
 import com.project.gongchalkka.global.exception.ErrorCode;
+import com.project.gongchalkka.global.jwt.CustomUserDetails;
 import com.project.gongchalkka.match.dto.MatchCreateRequest;
 import com.project.gongchalkka.match.dto.MatchResponse;
 import com.project.gongchalkka.match.entity.Match;
@@ -65,8 +66,9 @@ public class MatchService {
 
     ///  매치 참가 신청 메서드
     @Transactional
-    public void applyToMatch(Long matchId, Principal principal) {
-        Member member = memberService.validateMember(principal);
+    public void applyToMatch(Long matchId, Member member) {
+        // 불필요
+//        Member member = memberService.validateMember(customUserDetails);
 
         // 매치 정보 검증
         Match match = matchRepository.findByIdWithField(matchId).orElseThrow(
@@ -97,9 +99,7 @@ public class MatchService {
 
     ///  매치 참가 취소 메서드
     @Transactional
-    public void cancelMatch(Long matchId, Principal principal) {
-        // 유저 정보 검증
-        Member member = memberService.validateMember(principal);
+    public void cancelMatch(Long matchId, Member member) {
 
         // 매치 정보 검증
         Match match = matchRepository.findByIdWithField(matchId).orElseThrow(
@@ -131,11 +131,11 @@ public class MatchService {
 
     ///  매치 생성 메서드
     @Transactional
-    public MatchResponse createMatch(MatchCreateRequest request, Principal principal) {
+    public MatchResponse createMatch(MatchCreateRequest request, Member member) {
 
         ///  TODO: 매치 생성 관리자 제한(보류)
         // 유저 정보 검증
-        Member member = memberService.validateMember(principal);
+//        Member member = memberService.validateMember(principal);
 
         // 필드 검증
         Long fieldId = request.getFieldId();
@@ -153,7 +153,8 @@ public class MatchService {
                 field,
                 request.getStartTime(),
                 request.getEndTime(),
-                request.getMaxCapacity()
+                request.getMaxCapacity(),
+                member // 주최자(host)
         );
 
         Match savedMatch = matchRepository.save(newMatch);

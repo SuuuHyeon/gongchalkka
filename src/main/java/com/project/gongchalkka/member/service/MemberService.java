@@ -165,11 +165,11 @@ public class MemberService {
     /**
      * 멤버 검증 메서드
      */
-    public Member validateMember(Principal principal) {
-        // 유저 정보 검증
-        return memberRepository.findByEmail(principal.getName()).orElseThrow(
-                () -> new EntityNotFoundErrorException(ErrorCode.USER_NOT_FOUND)
-        );
-    }
+//    public Member validateMember(CustomUserDetails customUserDetails) {
+//         유저 정보 검증
+//        return memberRepository.findByEmail(customUserDetails.getName()).orElseThrow(
+//                () -> new EntityNotFoundErrorException(ErrorCode.USER_NOT_FOUND)
+//        );
+//    }
 
 }

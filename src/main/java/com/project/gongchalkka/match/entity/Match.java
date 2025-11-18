@@ -3,6 +3,7 @@ package com.project.gongchalkka.match.entity;
 import com.project.gongchalkka.field.entity.Field;
 import com.project.gongchalkka.global.exception.BusinessErrorException;
 import com.project.gongchalkka.global.exception.ErrorCode;
+import com.project.gongchalkka.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -15,7 +16,7 @@ import java.util.List;
 
 @Entity
 @Getter
-@ToString(exclude = {"field", "subscriptions"}) // 연관관계 필드는 제외
+@ToString(exclude = {"field", "subscriptions", "host"}) // 연관관계 필드는 제외
 // JPA를 위해 추가, 임의 변형 불가하게 protected
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "matchs")
@@ -42,6 +43,10 @@ public class Match {
     @Column(nullable = false)
     private Integer currentCapacity = 0;    // 기본값 0명으로 세팅
 
+    @JoinColumn(name = "host_member_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Member host;
+
     @OneToMany(mappedBy = "match", cascade = CascadeType.ALL)
     private List<MatchSubscription> subscriptions = new ArrayList<>();
 
@@ -51,11 +56,12 @@ public class Match {
 
 
     // 생성자
-    public Match(Field field, LocalDateTime startTime, LocalDateTime endTime, Integer maxCapacity) {
+    public Match(Field field, LocalDateTime startTime, LocalDateTime endTime, Integer maxCapacity, Member host) {
         this.field = field;
         this.startTime = startTime;
         this.endTime = endTime;
         this.maxCapacity = maxCapacity;
+        this.host = host;
     }
 
     // 매치 신청

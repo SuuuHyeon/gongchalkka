@@ -4,6 +4,8 @@ import com.project.gongchalkka.field.entity.Field;
 import com.project.gongchalkka.field.repository.FieldRepository;
 import com.project.gongchalkka.match.entity.Match;
 import com.project.gongchalkka.match.repository.MatchRepository;
+import com.project.gongchalkka.member.entity.Member;
+import com.project.gongchalkka.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime; // [⭐️] '시간' 기준
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -24,6 +27,7 @@ public class DataInitializer implements ApplicationRunner {
 
     private final FieldRepository fieldRepository;
     private final MatchRepository matchRepository;
+    private final MemberRepository memberRepository;
 
 
     @Override
@@ -37,6 +41,8 @@ public class DataInitializer implements ApplicationRunner {
         }
 
         log.info("[DataInitializer] '테스트용' 풋살장 및 (48개) 매치 데이터 생성 시작");
+
+        Member member = memberRepository.findById(2L).get(); // tngutnqls6909@gmail.com2
 
         // [⭐️ 1. 풋살장 2개 생성]
         Field fieldA = new Field(
@@ -85,7 +91,8 @@ public class DataInitializer implements ApplicationRunner {
                             field,
                             startTime,
                             endTime,
-                            1 // 👈 [요청 사항] maxCapacity = 1
+                            1, // 👈 [요청 사항] maxCapacity = 1
+                            member
                     );
                     matchesToSave.add(match);
                 }

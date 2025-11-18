@@ -1,6 +1,7 @@
 package com.project.gongchalkka.match.controller;
 
 
+import com.project.gongchalkka.global.jwt.CustomUserDetails;
 import com.project.gongchalkka.match.dto.MatchCreateRequest;
 import com.project.gongchalkka.match.dto.MatchResponse;
 import com.project.gongchalkka.match.service.MatchService;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -31,7 +33,8 @@ public class MatchController {
     public ResponseEntity<Page<MatchResponse>> getAllMatches(
             // 페이징 기본값 설정
             @PageableDefault(size = 20, sort = "startTime", direction = Sort.Direction.DESC)
-            Pageable pageable) {
+            Pageable pageable
+    ) {
         Page<MatchResponse> matches = matchService.getAllMatches(pageable);
 
         return ResponseEntity.ok(matches);
@@ -52,10 +55,10 @@ public class MatchController {
     @PostMapping("/{matchId}/apply")
     public ResponseEntity<Void> applyToMatch(
             @PathVariable Long matchId,
-            Principal principal
+            @AuthenticationPrincipal CustomUserDetails userDetails  // Principal -> CustomUserDetails로 변경
     ) {
         // '실제 로직'은 Service에 위임
-        matchService.applyToMatch(matchId, principal);
+        matchService.applyToMatch(matchId, userDetails.getMember());
 
         // 참가 신청 성공 시, 201 Created (새로운 '신청'이 생성됨)
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -65,8 +68,11 @@ public class MatchController {
      * 매치 취소
      */
     @DeleteMapping("/{matchId}")
-    public ResponseEntity<Void> cancelMatch(@PathVariable Long matchId, Principal principal) {
-        matchService.cancelMatch(matchId, principal);
+    public ResponseEntity<Void> cancelMatch(
+            @PathVariable Long matchId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        matchService.cancelMatch(matchId, userDetails.getMember());
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
@@ -76,8 +82,11 @@ public class MatchController {
      */
     @PostMapping
     /// TODO: 유효성 체크 추가
-    public ResponseEntity<MatchResponse> createMatch(@RequestBody MatchCreateRequest request, Principal principal) {
-        MatchResponse match = matchService.createMatch(request, principal);
+    public ResponseEntity<MatchResponse> createMatch(
+            @RequestBody MatchCreateRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        MatchResponse match = matchService.createMatch(request, userDetails.getMember());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(match);
     }
