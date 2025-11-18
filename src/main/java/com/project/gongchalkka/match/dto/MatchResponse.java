@@ -1,7 +1,6 @@
 package com.project.gongchalkka.match.dto;
 
 
-import com.project.gongchalkka.field.entity.Field;
 import com.project.gongchalkka.match.entity.Match;
 import com.project.gongchalkka.match.entity.MatchStatus;
 import lombok.Builder;
@@ -23,6 +22,7 @@ public class MatchResponse {
     private Long fieldId;
     private String fieldName;
     private String location;
+    private String hostName;
 
 
     public static MatchResponse fromEntity(Match match) {
@@ -36,6 +36,7 @@ public class MatchResponse {
                 .fieldId(match.getField().getId())
                 .fieldName(match.getField().getFieldName())
                 .location(match.getField().getLocation())
+                .hostName(match.getHost().getNickname())
                 .build();
 
     }

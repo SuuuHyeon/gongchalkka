@@ -16,12 +16,12 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
 
 
     // 매치 리스트 조회
-    @Query(value = "select m from Match m join fetch m.field",
+    @Query(value = "select m from Match m join fetch m.field join fetch m.host",
             countQuery = "select count(m) from Match m")
     Page<Match> findAllWithField(Pageable pageable);
 
     // 매치 단건 조회
-    @Query(value = "select m from Match m join fetch m.field where m.id = :matchId")
+    @Query(value = "select m from Match m join fetch m.field join fetch m.host where m.id = :matchId")
     Optional<Match> findByIdWithField(@Param("matchId") Long matchId);
 
     @Query("SELECT COUNT(m) > 0 FROM Match m " +
