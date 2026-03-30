@@ -30,10 +30,9 @@ public class JwtTokenProvider {
 
     /// yml에서 설정 값 주입
     public JwtTokenProvider(
-            JwtProperties jwtProperties, CustomUserDetailsService customUserDetailsService
-    ) {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecret());    // Base64로 인코딩된 비밀 키를 디코딩 후 'Key' 객체로 변환
-        this.key = Keys.hmacShaKeyFor(keyBytes);                // HMAC-SHA 알고리즘으로 Key 생성
+            JwtProperties jwtProperties, CustomUserDetailsService customUserDetailsService) {
+        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecret()); // Base64로 인코딩된 비밀 키를 디코딩 후 'Key' 객체로 변환
+        this.key = Keys.hmacShaKeyFor(keyBytes); // HMAC-SHA 알고리즘으로 Key 생성
         // 3. yml의 값들을 객체에서 꺼내 씀
         this.accessTokenValidityInMs = jwtProperties.getAccessTokenExpirationMs();
         this.refreshTokenValidityInMs = jwtProperties.getRefreshTokenExpirationMs();
@@ -48,7 +47,6 @@ public class JwtTokenProvider {
         long now = (new Date()).getTime();
         Date validity = new Date(now + accessTokenValidityInMs);
 
-
         String authorities = authentication.getAuthorities()
                 .stream()
                 .map(authority -> authority.getAuthority())
@@ -59,9 +57,9 @@ public class JwtTokenProvider {
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
 
         return Jwts.builder()
-                .subject(authentication.getName())                          // (Subject) = email
-                .claim("id", customUserDetails.getMember().getId())  // (Claim) = memberId
-                .claim(AUTHORITIES_KEY, Role.USER)                          // (Claim) = "ROLE_USER"
+                .subject(authentication.getName()) // (Subject) = email
+                .claim("id", customUserDetails.getMember().getId()) // (Claim) = memberId
+                .claim(AUTHORITIES_KEY, Role.USER) // (Claim) = "ROLE_USER"
                 .issuedAt(new Date(now))
                 .expiration(validity)
                 .signWith(key)
@@ -80,7 +78,6 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-
     /// 토근 검증 및 정보 추출
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts.parser()
@@ -89,27 +86,24 @@ public class JwtTokenProvider {
                 .parseSignedClaims(token)
                 .getPayload();
 
-        String email = claims.getSubject();     // 생성 때 넣었던 email
+        String email = claims.getSubject(); // 생성 때 넣었던 email
 
         List<SimpleGrantedAuthority> authorities = Arrays.stream((claims.get(AUTHORITIES_KEY)).toString().split(","))
                 .map(
-                        SimpleGrantedAuthority::new
-                )
+                        SimpleGrantedAuthority::new)
                 .toList();
 
         // userDetails 정보 생성
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
 
-
-        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
-                new UsernamePasswordAuthenticationToken(userDetails, "", authorities);
+        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
+                userDetails, "", authorities);
 
         log.info("토큰 검증 / 추출: {}", usernamePasswordAuthenticationToken);
 
-        ///  TODO: 다시보기
+        /// TODO: 다시보기
         return usernamePasswordAuthenticationToken;
     }
-
 
     /// 토큰 유효성 검사
     public boolean validateToken(String token) {

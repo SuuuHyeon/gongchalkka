@@ -1,6 +1,5 @@
 package com.project.gongchalkka.match.service;
 
-
 import com.project.gongchalkka.field.entity.Field;
 import com.project.gongchalkka.field.repository.FieldRepository;
 import com.project.gongchalkka.global.exception.BusinessErrorException;
@@ -38,8 +37,7 @@ public class MatchService {
     private final FieldRepository fieldRepository;
     private final MatchSubscriptionRepository matchSubscriptionRepository;
 
-
-    ///  매치 조회 메서드
+    /// 매치 조회 메서드
     public Page<MatchResponse> getAllMatches(Pageable pageable) {
 
         // 페이징 처리로 필드 정보를 가진 매치 가져오기
@@ -49,31 +47,28 @@ public class MatchService {
                 matchPage.getNumber() + 1, // spring은 0페이지부터 시작이라 +1
                 matchPage.getTotalPages(),
                 matchPage.getTotalElements(),
-                matchPage.getNumberOfElements()
-        );
+                matchPage.getNumberOfElements());
         return matchPage.map(MatchResponse::fromEntity);
     }
 
-    ///  매치 조회 (단건) 메서드
+    /// 매치 조회 (단건) 메서드
     public MatchResponse getMatch(Long matchId) {
         Match match = matchRepository.findByIdWithField(matchId).orElseThrow(
-                () -> new EntityNotFoundErrorException(ErrorCode.MATCH_NOT_FOUND)
-        );
+                () -> new EntityNotFoundErrorException(ErrorCode.MATCH_NOT_FOUND));
 
         return MatchResponse.fromEntity(match);
 
     }
 
-    ///  매치 참가 신청 메서드
+    /// 매치 참가 신청 메서드
     @Transactional
     public void applyToMatch(Long matchId, Member member) {
         // 불필요
-//        Member member = memberService.validateMember(customUserDetails);
+        // Member member = memberService.validateMember(customUserDetails);
 
         // 매치 정보 검증
         Match match = matchRepository.findByIdWithField(matchId).orElseThrow(
-                () -> new EntityNotFoundErrorException(ErrorCode.MATCH_NOT_FOUND)
-        );
+                () -> new EntityNotFoundErrorException(ErrorCode.MATCH_NOT_FOUND));
 
         // 중복 신청 조회
         if (matchSubscriptionRepository.existsByMemberAndMatch(member, match)) {
@@ -87,30 +82,26 @@ public class MatchService {
         MatchSubscription matchSubscription = new MatchSubscription(member, match);
         matchSubscriptionRepository.save(matchSubscription);
 
-
         log.info("매치 참가 신청 성공! [Member ID: {}, Member Name: {}, Match ID: {}, FieldName: {}]",
                 member.getId(),
                 member.getNickname(),
                 match.getId(),
-                match.getField().getFieldName()
-        );
+                match.getField().getFieldName());
     }
 
-
-    ///  매치 참가 취소 메서드
+    /// 매치 참가 취소 메서드
     @Transactional
     public void cancelMatch(Long matchId, Member member) {
 
         // 매치 정보 검증
         Match match = matchRepository.findByIdWithField(matchId).orElseThrow(
-                () -> new EntityNotFoundErrorException(ErrorCode.MATCH_NOT_FOUND)
-        );
+                () -> new EntityNotFoundErrorException(ErrorCode.MATCH_NOT_FOUND));
 
         // 신청서 검증
         MatchSubscription matchSubscription = matchSubscriptionRepository.findByMemberAndMatch(member, match)
                 .orElseThrow(
-                        () -> new EntityNotFoundErrorException(ErrorCode.SUBSCRIPTION_NOT_FOUND)
-                );
+                        () -> new EntityNotFoundErrorException(
+                                ErrorCode.SUBSCRIPTION_NOT_FOUND));
 
         if (matchSubscription.getStatus() == SubscriptionStatus.CANCELED) {
             throw new BusinessErrorException(ErrorCode.SUBSCRIPTION_ALREADY_CANCELED);
@@ -128,20 +119,18 @@ public class MatchService {
                 match.getField().getFieldName());
     }
 
-
-    ///  매치 생성 메서드
+    /// 매치 생성 메서드
     @Transactional
     public MatchResponse createMatch(MatchCreateRequest request, Member member) {
 
-        ///  TODO: 매치 생성 관리자 제한(보류)
+        /// TODO: 매치 생성 관리자 제한(보류)
         // 유저 정보 검증
-//        Member member = memberService.validateMember(principal);
+        // Member member = memberService.validateMember(principal);
 
         // 필드 검증
         Long fieldId = request.getFieldId();
         Field field = fieldRepository.findById(fieldId).orElseThrow(
-                () -> new EntityNotFoundErrorException(ErrorCode.FIELD_NOT_FOUND)
-        );
+                () -> new EntityNotFoundErrorException(ErrorCode.FIELD_NOT_FOUND));
 
         // 시간 중복 검사 (해당 구장의 시간이 비어있는지)
         if (matchRepository.existsOverlappingMatch(field, request.getStartTime(), request.getEndTime())) {
@@ -163,4 +152,3 @@ public class MatchService {
         return MatchResponse.fromEntity(savedMatch);
     }
 }
-

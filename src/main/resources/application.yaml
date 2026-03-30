@@ -2,6 +2,9 @@ spring:
   application:
     name: gongchalkka
 
+# dotenv
+  config:
+    import: optional:file:.env[.properties]
 
 # database
   datasource:

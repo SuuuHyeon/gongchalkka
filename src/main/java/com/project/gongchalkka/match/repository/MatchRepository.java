@@ -14,10 +14,8 @@ import java.util.Optional;
 public interface MatchRepository extends JpaRepository<Match, Long> {
     /// JPQL 적용
 
-
     // 매치 리스트 조회
-    @Query(value = "select m from Match m join fetch m.field join fetch m.host",
-            countQuery = "select count(m) from Match m")
+    @Query(value = "select m from Match m join fetch m.field join fetch m.host", countQuery = "select count(m) from Match m")
     Page<Match> findAllWithField(Pageable pageable);
 
     // 매치 단건 조회
@@ -31,6 +29,5 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     boolean existsOverlappingMatch(
             @Param("field") Field field,
             @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime
-    );
+            @Param("endTime") LocalDateTime endTime);
 }

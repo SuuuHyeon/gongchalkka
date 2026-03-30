@@ -19,7 +19,7 @@ import java.security.Principal;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/matches") // '매치' 관련 API
+@RequestMapping("/api/matches") // '매치' 관련 API
 public class MatchController {
 
     private final MatchService matchService;
