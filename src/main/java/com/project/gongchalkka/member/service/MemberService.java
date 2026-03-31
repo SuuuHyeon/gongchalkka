@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.Principal;
+import com.project.gongchalkka.member.dto.MemberResponse;
 
 @Slf4j
 @Service
@@ -163,13 +164,20 @@ public class MemberService {
     }
 
     /**
-     * 멤버 검증 메서드
+     * 유저 정보 조회 메서드
      */
-//    public Member validateMember(CustomUserDetails customUserDetails) {
-//         유저 정보 검증
-//        return memberRepository.findByEmail(customUserDetails.getName()).orElseThrow(
-//                () -> new EntityNotFoundErrorException(ErrorCode.USER_NOT_FOUND)
-//        );
-//    }
+    public MemberResponse getUserInfo(Principal principal) {
+        String email = principal.getName();
 
+        Member member = memberRepository.findByEmail(email).orElseThrow(
+                () -> new EntityNotFoundErrorException(ErrorCode.USER_NOT_FOUND)
+        );
+
+        return MemberResponse.builder()
+                .id(member.getId())
+                .email(member.getEmail())
+                .nickname(member.getNickname())
+                .role(member.getRole())
+                .build();
+    }
 }

@@ -32,7 +32,7 @@ public class MatchController {
     @GetMapping
     public ResponseEntity<Page<MatchResponse>> getAllMatches(
             // 페이징 기본값 설정
-            @PageableDefault(size = 20, sort = "startTime", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 20, sort = "startTime", direction = Sort.Direction.ASC)
             Pageable pageable
     ) {
         Page<MatchResponse> matches = matchService.getAllMatches(pageable);
@@ -61,7 +61,7 @@ public class MatchController {
         matchService.applyToMatch(matchId, userDetails.getMember());
 
         // 참가 신청 성공 시, 201 Created (새로운 '신청'이 생성됨)
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.ok().build();
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.project.gongchalkka.member.controller;
 
 import com.project.gongchalkka.member.dto.MemberLoginRequest;
+import com.project.gongchalkka.member.dto.MemberResponse;
 import com.project.gongchalkka.member.dto.MemberSignupRequest;
 import com.project.gongchalkka.member.dto.TokenReissueRequest;
 import com.project.gongchalkka.member.dto.TokenResponse;
@@ -8,6 +9,7 @@ import com.project.gongchalkka.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -66,5 +68,16 @@ public class MemberController {
         memberService.logout(principal);
 
         return ResponseEntity.noContent().build();
+    }
+
+
+    /**
+     * 유저 정보 조회
+     */
+    @GetMapping("/user-info")
+    public ResponseEntity<MemberResponse> userInfo(Principal principal) {
+        MemberResponse memberResponse = memberService.getUserInfo(principal);
+
+        return ResponseEntity.ok(memberResponse);
     }
 }
